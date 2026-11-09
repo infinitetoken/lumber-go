@@ -1,0 +1,31 @@
+name: CI
+run-name: CI - ${{ github.event.pull_request.title || github.event.head_commit.message }}
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # The oldest Go go.mod allows, and the newest
+        go-version: ['1.22', 'stable']
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version: ${{ matrix.go-version }}
+      - run: test -z "$(gofmt -l .)"
+      - run: go vet ./...
+      - run: go test -race ./...
+
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      # testdata/contract must be Lumber-Kit's contract at the version in testdata/contract/VERSION
+      - run: scripts/sync-contract.sh && git diff --exit-code testdata/contract

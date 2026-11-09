@@ -1,0 +1,2273 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://unpkg.com/@infinitetoken/lumber-kit/contract/schema.json",
+  "title": "Lumber-Kit",
+  "description": "Every type Lumber-Kit exports, generated from its TypeScript. A log's POST /logs body is LogIngestBody, and the plaintext a plugin encrypts into it is LogPayload.",
+  "definitions": {
+    "Appearance": {
+      "type": "string",
+      "enum": [
+        "system",
+        "dark",
+        "light"
+      ]
+    },
+    "PushToken": {
+      "type": "object",
+      "properties": {
+        "token": {
+          "type": "string"
+        },
+        "deviceId": {
+          "type": "string"
+        },
+        "platform": {
+          "type": "string",
+          "enum": [
+            "ios",
+            "android",
+            "web"
+          ]
+        },
+        "timeZone": {
+          "type": "string",
+          "description": "The device's IANA time zone, so a push can say a log's time as the device would."
+        }
+      },
+      "required": [
+        "token"
+      ],
+      "additionalProperties": false
+    },
+    "NotificationPreference": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "minimumLevel": {
+          "type": "number"
+        },
+        "notes": {
+          "type": "boolean",
+          "description": "Whether new notes on this app push, over the account's `notes`; missing follows the account's."
+        },
+        "lastReadAt": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "NotificationPreferences": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "minimumLevel": {
+          "type": "number"
+        },
+        "notes": {
+          "type": "boolean",
+          "description": "Whether new notes on the user's apps push; on unless false."
+        },
+        "perApp": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/NotificationPreference"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "UserRecord": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "publicKey": {
+          "type": "string"
+        },
+        "appearance": {
+          "$ref": "#/definitions/Appearance"
+        },
+        "color": {
+          "type": "string"
+        },
+        "imageUrl": {
+          "type": "string"
+        },
+        "agreedToTermsVersion": {
+          "type": "string"
+        },
+        "notificationPreferences": {
+          "$ref": "#/definitions/NotificationPreferences"
+        },
+        "pushTokens": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PushToken"
+          }
+        },
+        "emailVerifiedAt": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "When the address was confirmed, null until it is. Missing from an API before email confirmation."
+        },
+        "notesReadAt": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Per app, when the user last had its notes open, from any device. Missing from an API before it was kept."
+        }
+      },
+      "required": [
+        "id",
+        "createdAt",
+        "updatedAt",
+        "email",
+        "notificationPreferences",
+        "pushTokens"
+      ],
+      "additionalProperties": false,
+      "description": "Public user profile returned from API."
+    },
+    "TimeseriesBucket": {
+      "type": "object",
+      "properties": {
+        "date": {
+          "type": "string"
+        },
+        "count": {
+          "type": "number"
+        },
+        "byLevel": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number"
+          }
+        }
+      },
+      "required": [
+        "date",
+        "count"
+      ],
+      "additionalProperties": false,
+      "description": "A single time bucket in a timeseries response. date is an ISO date string (YYYY-MM-DD for 'day', ISO datetime for 'hour'). byLevel optionally breaks down the count per LogLevel for severity-tinted rendering."
+    },
+    "TimeseriesResponse": {
+      "type": "object",
+      "properties": {
+        "buckets": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TimeseriesBucket"
+          }
+        },
+        "from": {
+          "type": "string"
+        },
+        "to": {
+          "type": "string"
+        },
+        "interval": {
+          "type": "string",
+          "enum": [
+            "day",
+            "hour"
+          ]
+        }
+      },
+      "required": [
+        "buckets",
+        "from",
+        "to",
+        "interval"
+      ],
+      "additionalProperties": false,
+      "description": "Generic timeseries aggregate response. Reusable across logs, notifications, messages, etc."
+    },
+    "LogTimeseriesQuery": {
+      "type": "object",
+      "properties": {
+        "appIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "levels": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "from": {
+          "type": "string"
+        },
+        "to": {
+          "type": "string"
+        },
+        "interval": {
+          "type": "string",
+          "enum": [
+            "day",
+            "hour"
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "description": "Filter params for GET /logs/timeseries."
+    },
+    "LogLevel": {
+      "type": "number",
+      "enum": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "description": "Log severity level. Numeric values match the existing Lumber-API level field."
+    },
+    "LogLevelName": {
+      "type": "string",
+      "enum": [
+        "debug",
+        "info",
+        "warn",
+        "error",
+        "fatal"
+      ],
+      "description": "String name for each log level."
+    },
+    "ApiErrorCode": {
+      "type": "string",
+      "enum": [
+        "APP_LIMIT",
+        "SEAT_LIMIT",
+        "GUEST_LIMIT",
+        "ALREADY_MEMBER",
+        "ALREADY_READS",
+        "ALREADY_INVITED",
+        "HAS_ACCOUNT"
+      ]
+    },
+    "PushThreshold": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/LogLevel"
+        },
+        {
+          "type": "number",
+          "const": 5
+        }
+      ],
+      "description": "The lowest log level that pushes, or PUSH_OFF. Stored as a notification preference's `minimumLevel`."
+    },
+    "SubscriptionLevel": {
+      "type": "number",
+      "enum": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "description": "User subscription level. Mirrors User.subscriptionLevel in Lumber-API."
+    },
+    "SubscriptionLevelName": {
+      "type": "string",
+      "enum": [
+        "hobby",
+        "dev",
+        "pro",
+        "enterprise"
+      ],
+      "description": "String name for each subscription level, suitable for display and Redux state."
+    },
+    "SubscriptionLimits": {
+      "type": "object",
+      "properties": {
+        "apps": {
+          "type": "number"
+        },
+        "seats": {
+          "type": "number"
+        },
+        "apiKeys": {
+          "type": "number"
+        },
+        "logRetentionDays": {
+          "type": "number"
+        },
+        "monthlyLogs": {
+          "type": "number"
+        },
+        "realtimeLogs": {
+          "type": "boolean",
+          "description": "Whether real-time WebSocket log streaming is available."
+        },
+        "minPushLevel": {
+          "type": "number",
+          "description": "Minimum log level that triggers a push notification. Infinity means push is disabled."
+        }
+      },
+      "required": [
+        "apps",
+        "seats",
+        "apiKeys",
+        "logRetentionDays",
+        "monthlyLogs",
+        "realtimeLogs",
+        "minPushLevel"
+      ],
+      "additionalProperties": false
+    },
+    "SubscriptionPlan": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Display name, as every surface shows it."
+        },
+        "monthlyPrice": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Monthly price in US dollars: 0 for free, null when priced per customer."
+        }
+      },
+      "required": [
+        "name",
+        "monthlyPrice"
+      ],
+      "additionalProperties": false
+    },
+    "TeamRecord": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "color": {
+          "type": "string"
+        },
+        "imageUrl": {
+          "type": "string"
+        },
+        "subscriptionLevel": {
+          "$ref": "#/definitions/SubscriptionLevel"
+        },
+        "subscriptionEnd": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "When a canceled plan stops; null while it renews."
+        },
+        "role": {
+          "type": "string",
+          "enum": [
+            "owner",
+            "admin",
+            "member"
+          ],
+          "description": "GET /teams only: the caller's role on the team."
+        },
+        "memberId": {
+          "type": "string",
+          "description": "GET /teams only: the caller's membership id, which leaving the team deletes."
+        },
+        "appCount": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "GET /teams only: the team's apps, as creating one counts them. Null unless the caller is its owner or an admin."
+        },
+        "logsThisMonth": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "GET /teams only: logs its apps sent this UTC month, the monthly cap's count. Null unless owner or admin."
+        }
+      },
+      "required": [
+        "id",
+        "createdAt",
+        "updatedAt",
+        "name",
+        "subscriptionLevel"
+      ],
+      "additionalProperties": false,
+      "description": "An organization that owns apps and pays for member usage. Team subscriptionLevel takes precedence over individual member levels."
+    },
+    "TeamMemberRecord": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "type": "string"
+        },
+        "teamId": {
+          "type": "string"
+        },
+        "userId": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string",
+          "enum": [
+            "owner",
+            "admin",
+            "member"
+          ]
+        },
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Listed members only: their display name. Never their email address."
+        },
+        "handle": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Listed members only: the part of their email before the"
+        },
+        "color": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "imageUrl": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "createdAt",
+        "updatedAt",
+        "teamId",
+        "userId",
+        "role"
+      ],
+      "additionalProperties": false,
+      "description": "Membership of a user in a team."
+    },
+    "SubscriptionPlanRecord": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "priceId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "name",
+        "priceId"
+      ],
+      "additionalProperties": false,
+      "description": "A plan GET /subscriptions offers, with its Stripe price (none for Hobby)."
+    },
+    "TeamsQuery": {
+      "type": "object",
+      "properties": {
+        "sort": {
+          "type": "string"
+        },
+        "limit": {
+          "type": "number"
+        },
+        "cursor": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "description": "Filter params for GET /teams."
+    },
+    "AppEncryptedKey": {
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string"
+        },
+        "encryptedKey": {
+          "type": "string"
+        },
+        "keyVersion": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "userId",
+        "encryptedKey",
+        "keyVersion"
+      ],
+      "additionalProperties": false,
+      "description": "Wrapped application encryption key for a specific user."
+    },
+    "AppTeamAccess": {
+      "type": "string",
+      "enum": [
+        "everyone",
+        "owner"
+      ],
+      "description": "Who on an app's team can read it: everyone on the team, or only its owner. Its guests read it either way."
+    },
+    "AppRecord": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "color": {
+          "type": "string"
+        },
+        "imageUrl": {
+          "type": "string"
+        },
+        "teamId": {
+          "type": "string"
+        },
+        "encryptedKey": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "teamAccess": {
+          "$ref": "#/definitions/AppTeamAccess",
+          "description": "Missing means 'everyone'."
+        },
+        "retentionDays": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "How many days of its logs the app's team's plan keeps, null for no limit (and when missing)."
+        },
+        "logsCappedUntil": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "While the team has sent its plan's monthly logs, when new ones are taken again (the next UTC month); else null."
+        }
+      },
+      "required": [
+        "id",
+        "createdAt",
+        "updatedAt",
+        "name",
+        "encryptedKey"
+      ],
+      "additionalProperties": false,
+      "description": "API response shape for a listed or fetched app. encryptedKey is the requesting user's wrapped copy of the app key, or null if none exists. The optional fields are missing from an API deployed before them, which clients read as the default."
+    },
+    "AppCreatedRecord": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "color": {
+          "type": "string"
+        },
+        "imageUrl": {
+          "type": "string"
+        },
+        "teamId": {
+          "type": "string"
+        },
+        "encryptedKey": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "teamAccess": {
+          "$ref": "#/definitions/AppTeamAccess",
+          "description": "Missing means 'everyone'."
+        },
+        "retentionDays": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "How many days of its logs the app's team's plan keeps, null for no limit (and when missing)."
+        },
+        "logsCappedUntil": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "While the team has sent its plan's monthly logs, when new ones are taken again (the next UTC month); else null."
+        },
+        "apiKey": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "createdAt",
+        "encryptedKey",
+        "id",
+        "name",
+        "updatedAt"
+      ],
+      "description": "App creation response. Initial wrapped encryption key may optionally be returned."
+    },
+    "ApiKeyRecord": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "type": "string"
+        },
+        "appId": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "createdAt",
+        "updatedAt",
+        "appId"
+      ],
+      "additionalProperties": false,
+      "description": "Machine authentication credential."
+    },
+    "GuestRecord": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "type": "string"
+        },
+        "appId": {
+          "type": "string"
+        },
+        "userId": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string",
+          "enum": [
+            "owner",
+            "admin",
+            "read",
+            "write"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "createdAt",
+        "updatedAt",
+        "appId",
+        "userId",
+        "role"
+      ],
+      "additionalProperties": false,
+      "description": "External guest granted access to a specific app without being a team member."
+    },
+    "AppPermission": {
+      "type": "string",
+      "enum": [
+        "read",
+        "write",
+        "manage"
+      ],
+      "description": "What someone may do on an app. manage: the team's owner or admins, or a guest invited as owner or admin. write: a team member or a write guest. read: any other access."
+    },
+    "AppPersonRecord": {
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string"
+        },
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "handle": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The part of their email before the"
+        },
+        "color": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "imageUrl": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Their picture URL, or null for their initial."
+        },
+        "role": {
+          "type": "string",
+          "enum": [
+            "owner",
+            "admin",
+            "member",
+            "read",
+            "write"
+          ]
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "team",
+            "guest"
+          ]
+        }
+      },
+      "required": [
+        "userId",
+        "name",
+        "color",
+        "role",
+        "kind"
+      ],
+      "additionalProperties": false,
+      "description": "Someone who can read an app, as the others see them (GET /apps/:id/people): never their email address."
+    },
+    "AppsQuery": {
+      "type": "object",
+      "properties": {
+        "teamId": {
+          "type": "string"
+        },
+        "from": {
+          "type": "string"
+        },
+        "to": {
+          "type": "string"
+        },
+        "sort": {
+          "type": "string"
+        },
+        "limit": {
+          "type": "number"
+        },
+        "cursor": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "description": "Filter params for GET /apps."
+    },
+    "FlagRecord": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "type": "string"
+        },
+        "logId": {
+          "type": "string"
+        },
+        "userId": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "createdAt",
+        "updatedAt",
+        "logId",
+        "userId"
+      ],
+      "additionalProperties": false
+    },
+    "FlagsQuery": {
+      "type": "object",
+      "properties": {
+        "from": {
+          "type": "string"
+        },
+        "to": {
+          "type": "string"
+        },
+        "limit": {
+          "type": "number"
+        },
+        "cursor": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "LogContext": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "method": {
+          "type": "string"
+        },
+        "line": {
+          "type": "number"
+        },
+        "column": {
+          "type": "number"
+        },
+        "note": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {},
+      "description": "Structured log context content."
+    },
+    "LogEncrypted": {
+      "type": "object",
+      "properties": {
+        "nonce": {
+          "type": "string"
+        },
+        "payload": {
+          "type": "string"
+        },
+        "keyVersion": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "nonce",
+        "payload",
+        "keyVersion"
+      ],
+      "additionalProperties": false,
+      "description": "Encrypted envelope stored on the server. payload = base64(authTag + ciphertext) nonce = base64(random IV) keyVersion enables future rotation support."
+    },
+    "LogPayload": {
+      "type": "object",
+      "properties": {
+        "level": {
+          "$ref": "#/definitions/LogLevel"
+        },
+        "message": {
+          "type": "string"
+        },
+        "requestId": {
+          "type": "string"
+        },
+        "traceId": {
+          "type": "string"
+        },
+        "context": {
+          "$ref": "#/definitions/LogContext"
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": {}
+        }
+      },
+      "required": [
+        "level",
+        "message"
+      ],
+      "additionalProperties": false,
+      "description": "Plaintext shape of log content: a plugin encrypts it into LogEncrypted, and the server never sees it."
+    },
+    "LogData": {
+      "type": "object",
+      "properties": {
+        "requestId": {
+          "type": "string"
+        },
+        "traceId": {
+          "type": "string"
+        },
+        "context": {
+          "$ref": "#/definitions/LogContext"
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": {}
+        }
+      },
+      "additionalProperties": {},
+      "description": "What a plugin's log call takes beside its message (Lumber-Node's second argument). requestId and traceId become the payload's own fields, context is merged over the plugin's automatic context, and any other key goes into metadata, where an explicit metadata key wins. A context or metadata that isn't an object is kept as an ordinary metadata key."
+    },
+    "LogIngestBody": {
+      "type": "object",
+      "properties": {
+        "level": {
+          "$ref": "#/definitions/LogLevel"
+        },
+        "encrypted": {
+          "$ref": "#/definitions/LogEncrypted"
+        }
+      },
+      "required": [
+        "level",
+        "encrypted"
+      ],
+      "additionalProperties": false,
+      "description": "POST /logs' body. The level stays plaintext for filtering and pushes; everything else is in `encrypted`."
+    },
+    "LogDeliveryOutcome": {
+      "type": "string",
+      "enum": [
+        "sent",
+        "retry",
+        "drop",
+        "pause"
+      ],
+      "description": "What a plugin does with a log after POST /logs answers (see logDelivery)."
+    },
+    "LogRecord": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "type": "string"
+        },
+        "appId": {
+          "type": "string"
+        },
+        "level": {
+          "$ref": "#/definitions/LogLevel"
+        },
+        "encrypted": {
+          "$ref": "#/definitions/LogEncrypted"
+        }
+      },
+      "required": [
+        "id",
+        "createdAt",
+        "updatedAt",
+        "appId",
+        "level",
+        "encrypted"
+      ],
+      "additionalProperties": false,
+      "description": "API response shape for a stored log. level is plaintext for server-side notification routing; all content is inside encrypted."
+    },
+    "LogsQuery": {
+      "type": "object",
+      "properties": {
+        "appIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "levels": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "from": {
+          "type": "string"
+        },
+        "to": {
+          "type": "string"
+        },
+        "sort": {
+          "type": "string"
+        },
+        "limit": {
+          "type": "number"
+        },
+        "cursor": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "description": "Sync-protocol params for GET /logs."
+    },
+    "NoteEncrypted": {
+      "type": "object",
+      "properties": {
+        "payload": {
+          "type": "string"
+        },
+        "nonce": {
+          "type": "string"
+        },
+        "keyVersion": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "payload",
+        "nonce",
+        "keyVersion"
+      ],
+      "additionalProperties": false,
+      "description": "Encrypted note content. payload = base64(authTag + ciphertext) nonce = base64(random IV) keyVersion enables future key rotation."
+    },
+    "NoteRecord": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "type": "string"
+        },
+        "appId": {
+          "type": "string"
+        },
+        "userId": {
+          "type": "string"
+        },
+        "logId": {
+          "type": "string"
+        },
+        "encrypted": {
+          "$ref": "#/definitions/NoteEncrypted"
+        }
+      },
+      "required": [
+        "id",
+        "createdAt",
+        "updatedAt",
+        "appId",
+        "userId",
+        "encrypted"
+      ],
+      "additionalProperties": false,
+      "description": "A short user-authored note, encrypted with the app key. Visible to all members of the associated app. Query by teamId in NotesQuery to build a cross-app team feed."
+    },
+    "NotesQuery": {
+      "type": "object",
+      "properties": {
+        "appId": {
+          "type": "string"
+        },
+        "teamId": {
+          "type": "string"
+        },
+        "userId": {
+          "type": "string"
+        },
+        "logId": {
+          "type": "string"
+        },
+        "from": {
+          "type": "string"
+        },
+        "to": {
+          "type": "string"
+        },
+        "sort": {
+          "type": "string"
+        },
+        "limit": {
+          "type": "number"
+        },
+        "cursor": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "description": "Filter params for GET /notes."
+    },
+    "SocketAppPayload": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "teamId": {
+          "type": "string"
+        },
+        "color": {
+          "type": "string"
+        },
+        "imageUrl": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "createdAt",
+        "updatedAt"
+      ],
+      "additionalProperties": false,
+      "description": "An app as the socket sends it: no wrapped keys, so a client refetches through the API for its own copy."
+    },
+    "ServerToClientEvents": {
+      "type": "object",
+      "properties": {
+        "log:created": {
+          "$comment": "(log: Omit<LogRecord, 'updatedAt'> & { updatedAt?: string }) => void",
+          "type": "object",
+          "properties": {
+            "namedArgs": {
+              "type": "object",
+              "properties": {
+                "log": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "updatedAt": {
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "createdAt": {
+                      "type": "string"
+                    },
+                    "appId": {
+                      "type": "string"
+                    },
+                    "level": {
+                      "$ref": "#/definitions/LogLevel"
+                    },
+                    "encrypted": {
+                      "$ref": "#/definitions/LogEncrypted"
+                    }
+                  },
+                  "required": [
+                    "appId",
+                    "createdAt",
+                    "encrypted",
+                    "id",
+                    "level"
+                  ]
+                }
+              },
+              "required": [
+                "log"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "flag:created": {
+          "$comment": "(flag: Omit<FlagRecord, 'updatedAt'> & { updatedAt?: string }) => void",
+          "type": "object",
+          "properties": {
+            "namedArgs": {
+              "type": "object",
+              "properties": {
+                "flag": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "updatedAt": {
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "createdAt": {
+                      "type": "string"
+                    },
+                    "logId": {
+                      "type": "string"
+                    },
+                    "userId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "createdAt",
+                    "id",
+                    "logId",
+                    "userId"
+                  ]
+                }
+              },
+              "required": [
+                "flag"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "flag:deleted": {
+          "$comment": "(flag: Pick<FlagRecord, 'id'>) => void",
+          "type": "object",
+          "properties": {
+            "namedArgs": {
+              "type": "object",
+              "properties": {
+                "flag": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "flag"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "note:created": {
+          "$comment": "(note: NoteRecord) => void",
+          "type": "object",
+          "properties": {
+            "namedArgs": {
+              "type": "object",
+              "properties": {
+                "note": {
+                  "$ref": "#/definitions/NoteRecord"
+                }
+              },
+              "required": [
+                "note"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "note:updated": {
+          "$comment": "(note: NoteRecord) => void",
+          "type": "object",
+          "properties": {
+            "namedArgs": {
+              "type": "object",
+              "properties": {
+                "note": {
+                  "$ref": "#/definitions/NoteRecord"
+                }
+              },
+              "required": [
+                "note"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "note:deleted": {
+          "$comment": "(note: Pick<NoteRecord, 'id' | 'appId'>) => void",
+          "type": "object",
+          "properties": {
+            "namedArgs": {
+              "type": "object",
+              "properties": {
+                "note": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "appId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "appId"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "note"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "app:created": {
+          "$comment": "(app: SocketAppPayload) => void",
+          "type": "object",
+          "properties": {
+            "namedArgs": {
+              "type": "object",
+              "properties": {
+                "app": {
+                  "$ref": "#/definitions/SocketAppPayload"
+                }
+              },
+              "required": [
+                "app"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "app:updated": {
+          "$comment": "(app: SocketAppPayload) => void",
+          "type": "object",
+          "properties": {
+            "namedArgs": {
+              "type": "object",
+              "properties": {
+                "app": {
+                  "$ref": "#/definitions/SocketAppPayload"
+                }
+              },
+              "required": [
+                "app"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "app:deleted": {
+          "$comment": "(app: Pick<AppRecord, 'id'>) => void",
+          "type": "object",
+          "properties": {
+            "namedArgs": {
+              "type": "object",
+              "properties": {
+                "app": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "app"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "description": "Deleted, or kept to its team's owner and so gone for the rest of the team."
+        },
+        "access:changed": {
+          "$comment": "(payload: Record<string, never>) => void",
+          "type": "object",
+          "properties": {
+            "namedArgs": {
+              "type": "object",
+              "properties": {
+                "payload": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "not": {}
+                  }
+                }
+              },
+              "required": [
+                "payload"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "description": "Someone joined or left a team or app the user is on. Carries nothing; sent on every plan."
+        },
+        "socket:reconnected": {
+          "$comment": "() => void",
+          "description": "The socket's database connection came back after a gap and has replayed what it could. Deletes, and anything older or past the replay's cap, need the client's own resync."
+        },
+        "myApps": {
+          "$comment": "(payload: { apps: Pick<AppRecord, 'id' | 'name'>[] }) => void",
+          "type": "object",
+          "properties": {
+            "namedArgs": {
+              "type": "object",
+              "properties": {
+                "payload": {
+                  "type": "object",
+                  "properties": {
+                    "apps": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "apps"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "payload"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "description": "The answer to `listMyApps`: the apps the user gets live updates for."
+        },
+        "error": {
+          "$comment": "(payload: { message: string }) => void",
+          "type": "object",
+          "properties": {
+            "namedArgs": {
+              "type": "object",
+              "properties": {
+                "payload": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "payload"
+              ],
+              "additionalProperties": false
+            }
+          }
+        }
+      },
+      "required": [
+        "log:created",
+        "flag:created",
+        "flag:deleted",
+        "note:created",
+        "note:updated",
+        "note:deleted",
+        "app:created",
+        "app:updated",
+        "app:deleted",
+        "access:changed",
+        "socket:reconnected",
+        "myApps",
+        "error"
+      ],
+      "additionalProperties": false,
+      "description": "What Lumber-Socket sends a client, for socket.io's typed `Server` and `Socket`. Each goes to the users who can read the app it's about, live updates permitting (the app's team's plan); flags go to the user who set them."
+    },
+    "ClientToServerEvents": {
+      "type": "object",
+      "properties": {
+        "listMyApps": {
+          "$comment": "() => void"
+        }
+      },
+      "required": [
+        "listMyApps"
+      ],
+      "additionalProperties": false,
+      "description": "What a client sends Lumber-Socket."
+    },
+    "ResponseMetadata": {
+      "type": "object",
+      "properties": {
+        "requestId": {
+          "type": "string"
+        },
+        "durationMs": {
+          "type": "number"
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "cursor": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "hasMore": {
+          "type": "boolean"
+        },
+        "count": {
+          "type": "number"
+        },
+        "hiddenCount": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "requestId",
+        "durationMs"
+      ],
+      "additionalProperties": false
+    },
+    "PushData": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "log"
+            },
+            "appId": {
+              "type": "string"
+            },
+            "logId": {
+              "type": "string"
+            },
+            "level": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "appId",
+            "logId",
+            "level"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "note"
+            },
+            "appId": {
+              "type": "string"
+            },
+            "noteId": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "appId",
+            "noteId"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "device_link"
+            },
+            "deviceLinkId": {
+              "type": "string"
+            },
+            "deviceName": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "deviceLinkId",
+            "deviceName"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "device_link_answered"
+            },
+            "deviceLinkId": {
+              "type": "string"
+            },
+            "deviceName": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "deviceLinkId",
+            "deviceName"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "key_check"
+            },
+            "checkId": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "checkId"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "key_waiting"
+            },
+            "userId": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "userId"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "keys_shared"
+            },
+            "appId": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        }
+      ],
+      "description": "The `data` a push notification carries, which the app reads to open the screen it's about. Expo delivers data as JSON, but some platforms want strings, so every value is one."
+    },
+    "PushType": {
+      "type": "string",
+      "enum": [
+        "log",
+        "note",
+        "device_link",
+        "device_link_answered",
+        "key_check",
+        "key_waiting",
+        "keys_shared"
+      ]
+    },
+    "PendingAppKey": {
+      "type": "object",
+      "properties": {
+        "appId": {
+          "type": "string"
+        },
+        "userId": {
+          "type": "string"
+        },
+        "publicKey": {
+          "type": "string"
+        },
+        "keyChangedAt": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "appId",
+        "userId",
+        "publicKey"
+      ],
+      "additionalProperties": false,
+      "description": "Someone with access to an app who has no wrapped copy of its key yet (GET /apps/keys/pending), with when they last replaced their account key: null if never, missing from an API before key pins."
+    },
+    "KeyHolder": {
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string"
+        },
+        "publicKey": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "userId",
+        "publicKey"
+      ],
+      "additionalProperties": false,
+      "description": "Someone who reads one of the caller's apps and already has a wrapped copy of its key (GET /apps/keys/holders)."
+    },
+    "AppKeyUpsertBody": {
+      "type": "object",
+      "properties": {
+        "encryptedKey": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "encryptedKey"
+      ],
+      "additionalProperties": false,
+      "description": "Body of PUT /apps/:id/keys/:userId: the app key wrapped to that user's account key."
+    },
+    "KeyPin": {
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string"
+        },
+        "publicKey": {
+          "type": "string"
+        },
+        "mac": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "userId",
+        "publicKey",
+        "mac"
+      ],
+      "additionalProperties": false,
+      "description": "An account key a user has accepted for someone they share apps with (GET /key-pins). `mac` is an HMAC by the user's own devices, under a key derived from their account key, over the user, the person and the key: the server can drop a pin but not forge or move one."
+    },
+    "KeyCheckResult": {
+      "type": "string",
+      "enum": [
+        "confirmed",
+        "failed",
+        "cancelled"
+      ]
+    },
+    "HolderKeyCheck": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "userId": {
+          "type": "string"
+        },
+        "sid": {
+          "type": "string"
+        },
+        "holderMessage": {
+          "type": "string"
+        },
+        "holderState": {
+          "type": "string",
+          "description": "The holder's half of the exchange, sealed under their account key."
+        },
+        "claimantMessage": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "publicKey": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "tag": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "answeredAt": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "result": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/KeyCheckResult"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "finishedAt": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "expiresAt": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "sid",
+        "holderMessage",
+        "holderState",
+        "claimantMessage",
+        "publicKey",
+        "tag",
+        "answeredAt",
+        "result",
+        "finishedAt",
+        "expiresAt",
+        "createdAt"
+      ],
+      "additionalProperties": false,
+      "description": "A key check the caller started, as their devices read it (GET /key-checks/mine): enough to show the code again or finish the check. The messages are a password-authenticated exchange the server can't read or test codes against."
+    },
+    "ClaimantKeyCheck": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "holderId": {
+          "type": "string"
+        },
+        "holderName": {
+          "type": "string"
+        },
+        "sid": {
+          "type": "string"
+        },
+        "holderMessage": {
+          "type": "string"
+        },
+        "answeredAt": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "result": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/KeyCheckResult"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "finishedAt": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "expiresAt": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "holderId",
+        "holderName",
+        "sid",
+        "holderMessage",
+        "answeredAt",
+        "result",
+        "finishedAt",
+        "expiresAt",
+        "createdAt"
+      ],
+      "additionalProperties": false,
+      "description": "A key check waiting on the caller's answer, or how a recent answer went (GET /key-checks/for-me)."
+    },
+    "InvitationRecord": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "teamId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "appId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "email": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string"
+        },
+        "sentAt": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Null when its email couldn't be sent."
+        },
+        "expiresAt": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "teamId",
+        "appId",
+        "email",
+        "role",
+        "sentAt",
+        "expiresAt",
+        "createdAt"
+      ],
+      "additionalProperties": false,
+      "description": "An invitation to an address with no account yet: to a team (teamId, as a member or admin) or to one app as its guest (appId). The address joins when it signs up and confirms itself. A live one (unexpired) holds its seat."
+    },
+    "DeviceLinkStatus": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved",
+        "denied",
+        "failed"
+      ],
+      "description": "A device link request: a new device asking for the account key from a device that has it. `failed` is a code that didn't match, which ends the request."
+    },
+    "DeviceLinkPlatform": {
+      "type": "string",
+      "enum": [
+        "ios",
+        "android",
+        "web",
+        "desktop",
+        "cli"
+      ],
+      "description": "What a request comes from, so the device answering it can say so and offer a QR code only to a phone's camera."
+    },
+    "DeviceLinkCreateBody": {
+      "type": "object",
+      "properties": {
+        "deviceName": {
+          "type": "string"
+        },
+        "platform": {
+          "$ref": "#/definitions/DeviceLinkPlatform"
+        },
+        "publicKey": {
+          "type": "string",
+          "description": "The public half of the new device's one-off X25519 keypair, which the account key is wrapped to."
+        },
+        "deviceId": {
+          "type": "string",
+          "description": "The new device's push device id, so the push asking the account's devices to link it skips it."
+        }
+      },
+      "required": [
+        "deviceName",
+        "platform",
+        "publicKey"
+      ],
+      "additionalProperties": false,
+      "description": "Body of POST /device-links."
+    },
+    "DeviceLinkCreatedRecord": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "expiresAt": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "expiresAt"
+      ],
+      "additionalProperties": false,
+      "description": "Response from POST /device-links."
+    },
+    "DeviceLinkApproveBody": {
+      "type": "object",
+      "properties": {
+        "encryptedKey": {
+          "type": "string"
+        },
+        "deliveryTag": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "encryptedKey",
+        "deliveryTag"
+      ],
+      "additionalProperties": false,
+      "description": "Body of POST /device-links/:id/approve: the account key wrapped to the new device, and a tag over it made from the code's secret, which the new device checks before storing the key, so the server can't hand it a key of its own."
+    },
+    "DeviceLinkRecord": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/DeviceLinkStatus"
+        },
+        "encryptedKey": {
+          "type": "string"
+        },
+        "deliveryTag": {
+          "type": "string"
+        },
+        "expiresAt": {
+          "type": "string"
+        },
+        "sid": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "holderMessage": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "answeredAt": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "status",
+        "expiresAt"
+      ],
+      "additionalProperties": false,
+      "description": "Response from GET /device-links/:id, as the new device reads it. encryptedKey and deliveryTag are present only when status is 'approved'. sid and holderMessage are set once a device holding the account key shows the request's code, and answeredAt once the new device has answered it."
+    },
+    "PendingDeviceLink": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "deviceName": {
+          "type": "string"
+        },
+        "platform": {
+          "$ref": "#/definitions/DeviceLinkPlatform"
+        },
+        "publicKey": {
+          "type": "string",
+          "description": "The new device's one-off public key, which an answer's tag has to cover before anything is wrapped to it."
+        },
+        "sid": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "holderMessage": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "holderState": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "claimantMessage": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "tag": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "answeredAt": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "expiresAt": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "deviceName",
+        "platform",
+        "publicKey",
+        "sid",
+        "holderMessage",
+        "holderState",
+        "claimantMessage",
+        "tag",
+        "answeredAt",
+        "expiresAt",
+        "createdAt"
+      ],
+      "additionalProperties": false,
+      "description": "A request waiting on the caller's account key (GET /device-links/pending), as a device holding it reads it: enough to show its code, and to finish it once answered. The messages are the same password-authenticated exchange as a key check's, so the server can't read or test codes against them. holderState is the code's side of the exchange, sealed under the account key, so any of the account's devices can show the same code or finish the request."
+    },
+    "ApiErrorBody": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string"
+        },
+        "code": {
+          "$ref": "#/definitions/ApiErrorCode"
+        }
+      },
+      "required": [
+        "message"
+      ],
+      "additionalProperties": false,
+      "description": "The body of an API error response. `code` is there where the status alone doesn't say what went wrong."
+    }
+  }
+}

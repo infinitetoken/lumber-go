@@ -1,0 +1,180 @@
+{
+  "$comment": "Known answers every Lumber plugin is tested against, whatever its language. Lumber-Kit's own tests check each one against its TypeScript (buildLogPayload, splitApiKey, logDeliveryOutcome, logRetryDelayMs, the constants) and Node's crypto, so these can't drift from the kit. An absent key means absent: JSON has no undefined, and null data values are left out like missing ones.",
+  "constants": {
+    "defaultEndpoint": "https://api.lumber.infinitetoken.com",
+    "ingestPath": "/logs",
+    "keyVersion": 1,
+    "keyBytes": 32,
+    "nonceBytes": 12,
+    "tagBytes": 16,
+    "levels": { "debug": 0, "info": 1, "warn": 2, "error": 3, "fatal": 4 },
+    "delivery": { "maxAttempts": 5, "baseDelayMs": 1000, "maxDelayMs": 30000, "pauseMs": 3600000 }
+  },
+  "apiKeys": [
+    {
+      "name": "token and encryption key",
+      "apiKey": "3f9c0e7a1b2d4c6e8f0a1b2c3d4e5f60.AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=",
+      "token": "3f9c0e7a1b2d4c6e8f0a1b2c3d4e5f60",
+      "encryptionKey": "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8="
+    },
+    {
+      "name": "surrounding whitespace, as pasted from a terminal",
+      "apiKey": "  3f9c0e7a1b2d4c6e8f0a1b2c3d4e5f60.AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=\n",
+      "token": "3f9c0e7a1b2d4c6e8f0a1b2c3d4e5f60",
+      "encryptionKey": "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8="
+    },
+    {
+      "name": "a bare token carries no encryption key",
+      "apiKey": "3f9c0e7a1b2d4c6e8f0a1b2c3d4e5f60",
+      "token": "3f9c0e7a1b2d4c6e8f0a1b2c3d4e5f60",
+      "encryptionKey": null
+    },
+    {
+      "name": "empty",
+      "apiKey": "",
+      "token": "",
+      "encryptionKey": null
+    }
+  ],
+  "encryption": [
+    {
+      "name": "ascii",
+      "key": "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=",
+      "nonce": "oKGio6Slpqeoqaqr",
+      "plaintext": "{\"level\":1,\"message\":\"Server started\",\"metadata\":{\"port\":3000}}",
+      "payload": "GJU0Lu4J1IGhob9mA32TqJ06EEgzrm6dWFSr8Wofs60RyzwyqJURCe54Q/Rf2AFgoAIim40OcVA66GWsaA7i231gZDgNom5ce207bpQN+A=="
+    },
+    {
+      "name": "non-ascii, encoded as utf-8",
+      "key": "QkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkI=",
+      "nonce": "BwcHBwcHBwcHBwcH",
+      "plaintext": "{\"level\":3,\"message\":\"Paiement échoué ☕ 🚨\",\"context\":{\"pid\":4242,\"hostname\":\"web-1\"},\"metadata\":{\"user\":\"Zoë\"}}",
+      "payload": "bG1l/6IGl9vfE0wA1rhuEAPAMcnDlB7ZGWfAErA+VQ+UPWofx/cYJAkRUjZ0WTi3hotyvwFw3G2lbtCoKgD6/aRDnUpDt4kk+HF3FGk6VaEEt5fqiu28C5u9EifuYjd4Qh8KcSMdO9eeVWLqsg2eIpbV9qQQOtD1fMXktGfQmxTjmMtMZuKm"
+    },
+    {
+      "name": "empty message",
+      "key": "7qi7Ixae6epI48zxshkBw43xktBTaE/pwLxUoUhZ6e0=",
+      "nonce": "eDd7UldXtJRCf4kB",
+      "plaintext": "{\"level\":0,\"message\":\"\"}",
+      "payload": "M2E8vR0ITv6RfAwC3fDiMVIfWt3N9U6DEveRBpqxc/K49Py/HVQpMw=="
+    }
+  ],
+  "payloads": [
+    {
+      "name": "message alone",
+      "level": 1,
+      "message": "Server started",
+      "payload": { "level": 1, "message": "Server started" }
+    },
+    {
+      "name": "request and trace ids",
+      "level": 3,
+      "message": "Payment failed",
+      "data": { "requestId": "req-123", "traceId": "trace-abc" },
+      "payload": { "level": 3, "message": "Payment failed", "requestId": "req-123", "traceId": "trace-abc" }
+    },
+    {
+      "name": "other keys become metadata",
+      "level": 1,
+      "message": "User action",
+      "data": { "userId": "123", "action": "login", "order": { "id": 7, "total": 12.5, "items": ["a", "b"] } },
+      "payload": { "level": 1, "message": "User action", "metadata": { "userId": "123", "action": "login", "order": { "id": 7, "total": 12.5, "items": ["a", "b"] } } }
+    },
+    {
+      "name": "explicit metadata wins over other keys",
+      "level": 2,
+      "message": "Rate limit approaching",
+      "data": { "version": 1, "region": "us", "metadata": { "version": 2, "build": "b7" } },
+      "payload": { "level": 2, "message": "Rate limit approaching", "metadata": { "version": 2, "region": "us", "build": "b7" } }
+    },
+    {
+      "name": "metadata alone",
+      "level": 1,
+      "message": "Cache warmed",
+      "data": { "metadata": { "entries": 512 } },
+      "payload": { "level": 1, "message": "Cache warmed", "metadata": { "entries": 512 } }
+    },
+    {
+      "name": "automatic context alone",
+      "level": 0,
+      "message": "Cache miss",
+      "autoContext": { "pid": 4242, "hostname": "web-1" },
+      "payload": { "level": 0, "message": "Cache miss", "context": { "pid": 4242, "hostname": "web-1" } }
+    },
+    {
+      "name": "the call's context over the automatic context",
+      "level": 1,
+      "message": "Job done",
+      "autoContext": { "pid": 4242, "hostname": "web-1", "env": "production" },
+      "data": { "context": { "hostname": "worker-3", "code": "jobs/billing.py", "line": 42 } },
+      "payload": { "level": 1, "message": "Job done", "context": { "pid": 4242, "hostname": "worker-3", "env": "production", "code": "jobs/billing.py", "line": 42 } }
+    },
+    {
+      "name": "context with no automatic context",
+      "level": 1,
+      "message": "Job done",
+      "autoContext": {},
+      "data": { "context": { "code": "app.ts" } },
+      "payload": { "level": 1, "message": "Job done", "context": { "code": "app.ts" } }
+    },
+    {
+      "name": "a context that isn't an object is a metadata key",
+      "level": 1,
+      "message": "Invoice sent",
+      "data": { "context": "billing" },
+      "payload": { "level": 1, "message": "Invoice sent", "metadata": { "context": "billing" } }
+    },
+    {
+      "name": "metadata that isn't an object is a metadata key",
+      "level": 1,
+      "message": "Batch",
+      "data": { "metadata": [1, 2, 3] },
+      "payload": { "level": 1, "message": "Batch", "metadata": { "metadata": [1, 2, 3] } }
+    },
+    {
+      "name": "a null context and metadata are left out",
+      "level": 1,
+      "message": "Nothing extra",
+      "data": { "context": null, "metadata": null },
+      "payload": { "level": 1, "message": "Nothing extra" }
+    },
+    {
+      "name": "a level key in the data is metadata, never the log's level",
+      "level": 3,
+      "message": "Disk nearly full",
+      "data": { "level": "high", "message": "ignored" },
+      "payload": { "level": 3, "message": "Disk nearly full", "metadata": { "level": "high", "message": "ignored" } }
+    },
+    {
+      "name": "everything",
+      "level": 4,
+      "message": "DB connection lost ☠",
+      "autoContext": { "pid": 1, "hostname": "db-proxy" },
+      "data": { "requestId": "r1", "traceId": "t1", "context": { "method": "connect" }, "metadata": { "retries": 3 }, "host": "10.0.0.5" },
+      "payload": { "level": 4, "message": "DB connection lost ☠", "requestId": "r1", "traceId": "t1", "context": { "pid": 1, "hostname": "db-proxy", "method": "connect" }, "metadata": { "host": "10.0.0.5", "retries": 3 } }
+    }
+  ],
+  "deliveryOutcomes": [
+    { "status": 200, "outcome": "sent" },
+    { "status": 201, "outcome": "sent" },
+    { "status": 301, "outcome": "retry" },
+    { "status": 400, "outcome": "drop" },
+    { "status": 401, "outcome": "drop" },
+    { "status": 403, "outcome": "drop" },
+    { "status": 404, "outcome": "drop" },
+    { "status": 413, "outcome": "drop" },
+    { "status": 429, "outcome": "pause" },
+    { "status": 500, "outcome": "retry" },
+    { "status": 502, "outcome": "retry" },
+    { "status": 503, "outcome": "retry" },
+    { "status": null, "outcome": "retry" }
+  ],
+  "retryDelaysMs": [
+    { "failedAttempts": 1, "delayMs": 1000 },
+    { "failedAttempts": 2, "delayMs": 2000 },
+    { "failedAttempts": 3, "delayMs": 4000 },
+    { "failedAttempts": 4, "delayMs": 8000 },
+    { "failedAttempts": 5, "delayMs": 16000 },
+    { "failedAttempts": 6, "delayMs": 30000 }
+  ]
+}
