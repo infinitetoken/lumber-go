@@ -81,7 +81,7 @@ client, err := lumber.New(os.Getenv("LUMBER_API_KEY"),
 
 ## Delivery
 
-Logs are sent in order, one `POST /logs` per log, over a connection kept open between logs. A network error or a 5xx counts as a failed attempt: each log gets 5, waiting 1, 2, 4, then 8 seconds between them, and is then dropped with a warning. A log Lumber refuses (a 4xx, such as an invalid API key) is dropped at once with a warning, since sending it again won't help. When your team has sent its plan's logs for the month, Lumber answers 429: the client warns once and drops logs until the month turns. While Lumber can't be reached, up to `WithMaxQueue` logs wait; past that, new ones are dropped. Warnings go to standard error unless you pass `WithWarnings`.
+Logs are sent in order, one `POST /logs` per log, over a connection kept open between logs. A network error or a 5xx counts as a failed attempt: each log gets 5, waiting 1, 2, 4, then 8 seconds between them, and is then dropped with a warning. A log Lumber refuses (a 4xx, such as an invalid API key, or a 413 for a log over 16 KB once encrypted) is dropped at once with a warning, since sending it again won't help. Errors always get through: past your team's monthly logs, Lumber still takes error and fatal logs, and answers the rest 200 without keeping them, so the client carries on with no warning (the Lumber app shows when your team is at its limit). At twice your team's monthly logs Lumber answers 429: the client warns once and drops logs until the month turns. While Lumber can't be reached, up to `WithMaxQueue` logs wait; past that, new ones are dropped. Warnings go to standard error unless you pass `WithWarnings`.
 
 ## Development
 
